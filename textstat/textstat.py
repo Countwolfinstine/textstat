@@ -4,13 +4,19 @@ import string
 import re
 import math
 import operator
+from multiprocessing import Pool
+from multiprocessing import Process , Queue
+
 
 exclude = list(string.punctuation)
 easy_word_set = set([ln.strip() for ln in pkg_resources.resource_stream('textstat', 'easy_words.txt')])
-
+q1=Queue()
+q2=Queue()
+        
 
 class textstatistics:
     def __init__(self):
+       
         return None
 
     def char_count(self, text, ignore_spaces=True):
@@ -32,6 +38,16 @@ class textstatistics:
         count = len(text.split())
         return count
 
+
+    def lexicon_count_process(self, text, removepunct=True):
+        """
+        Function to return total lexicon (words in lay terms) counts in a text
+        """
+        if removepunct:
+            text = ''.join(ch for ch in text if ch not in exclude)
+        count = len(text.split())
+        q2.put(count)
+        
     def syllable_count(self, text):
         """
         Function to calculate syllable words in a text.
@@ -72,6 +88,16 @@ class textstatistics:
             if self.lexicon_count(sentence) <= 2:
                 ignoreCount = ignoreCount + 1
         return max(1, len(sentences) - ignoreCount)
+
+    def avg_sentence_length_process(self, text , lc, ld):
+        
+        sc = self.sentence_count(text)
+        try:
+            ASL = float(lc/sc)
+            return round(lc/sc, 1)
+        except:
+            print("Error(ASL): Sentence Count is Zero, Cannot Divide")
+            return
 
     def avg_sentence_length(self, text):
         lc = self.lexicon_count(text)
@@ -182,6 +208,16 @@ class textstatistics:
                     print("Error (LWF): ", E)
         return float(Number)
 
+    def difficult_words_process(self, text):
+        text_list = text.split()
+        diff_words_set = set()
+        for value in text_list:
+            if value not in easy_word_set:
+                if self.syllable_count(value) > 1:
+                    if value not in diff_words_set:
+                        diff_words_set.add(value)
+        q1.put(len(diff_words_set))
+
     def difficult_words(self, text):
         text_list = text.split()
         diff_words_set = set()
@@ -192,6 +228,7 @@ class textstatistics:
                         diff_words_set.add(value)
         return len(diff_words_set)
 
+        
     def dale_chall_readability_score(self, text):
         word_count = self.lexicon_count(text)
         count = word_count - self.difficult_words(text)
@@ -215,6 +252,19 @@ class textstatistics:
         except:
             print("Error(GF): Word Count is Zero, cannot divide")
 
+    def gunning_fog_multiprocess(self, text):
+            p = Process(target=self.difficult_words_process,args=(text ,))
+            q = Process(target=self.lexicon_count_process,args=(text ,)) 
+            p.start()
+            q.start()
+            q.join()
+            p.join()
+            xd=q1.get()
+            xc=q2.get()            
+            per_diff_words = (xd/xc*100) + 5
+            grade = 0.4*(self.avg_sentence_length_process(text,xc,xd) + per_diff_words)
+            return grade
+            
     def text_standard(self, text):
         grade = []
 
