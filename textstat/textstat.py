@@ -98,7 +98,7 @@ class textstatistics:
         except:
             print("Error(ASL): Sentence Count is Zero, Cannot Divide")
             return
-
+            
     def avg_sentence_length(self, text):
         lc = self.lexicon_count(text)
         sc = self.sentence_count(text)
@@ -253,6 +253,7 @@ class textstatistics:
             print("Error(GF): Word Count is Zero, cannot divide")
 
     def gunning_fog_multiprocess(self, text):
+        try:
             p = Process(target=self.difficult_words_process,args=(text ,))
             q = Process(target=self.lexicon_count_process,args=(text ,)) 
             p.start()
@@ -264,7 +265,9 @@ class textstatistics:
             per_diff_words = (xd/xc*100) + 5
             grade = 0.4*(self.avg_sentence_length_process(text,xc,xd) + per_diff_words)
             return grade
-            
+        except:
+            print("Error(GF): Word Count is Zero, cannot divide")    
+    
     def text_standard(self, text):
         grade = []
 
@@ -336,5 +339,4 @@ class textstatistics:
         final_grade = str((sorted_x)[len(sorted_x)-1])
         score = final_grade.split(',')[0].strip('(')
         return str(int(score)-1) + "th " + "and " + str(int(score)) + "th grade"
-
 textstat = textstatistics()
