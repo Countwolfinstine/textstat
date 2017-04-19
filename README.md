@@ -1,3 +1,24 @@
+Parallelized Gunning fog function
+-------
+Usage:
+```
+print textstat.gunning_fog_multiprocess(test_data)
+```
+Run the performance test by running the test.py file, command:
+```
+$ python test.py
+```
+You can change the input file name inside the test.py file. Have also added a few sample inputs in the Data folder.
+
+
+
+
+
+
+
+
+
+
 textstat
 ========
 
