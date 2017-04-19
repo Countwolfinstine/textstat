@@ -38,15 +38,6 @@ class textstatistics:
         count = len(text.split())
         return count
 
-
-    def lexicon_count_process(self, text, removepunct=True):
-        """
-        Function to return total lexicon (words in lay terms) counts in a text
-        """
-        if removepunct:
-            text = ''.join(ch for ch in text if ch not in exclude)
-        count = len(text.split())
-        q2.put(count)
         
     def syllable_count(self, text):
         """
@@ -89,16 +80,6 @@ class textstatistics:
                 ignoreCount = ignoreCount + 1
         return max(1, len(sentences) - ignoreCount)
 
-    def avg_sentence_length_process(self, text , lc, ld):
-        
-        sc = self.sentence_count(text)
-        try:
-            ASL = float(lc/sc)
-            return round(lc/sc, 1)
-        except:
-            print("Error(ASL): Sentence Count is Zero, Cannot Divide")
-            return
-            
     def avg_sentence_length(self, text):
         lc = self.lexicon_count(text)
         sc = self.sentence_count(text)
@@ -208,16 +189,6 @@ class textstatistics:
                     print("Error (LWF): ", E)
         return float(Number)
 
-    def difficult_words_process(self, text):
-        text_list = text.split()
-        diff_words_set = set()
-        for value in text_list:
-            if value not in easy_word_set:
-                if self.syllable_count(value) > 1:
-                    if value not in diff_words_set:
-                        diff_words_set.add(value)
-        q1.put(len(diff_words_set))
-
     def difficult_words(self, text):
         text_list = text.split()
         diff_words_set = set()
@@ -251,23 +222,85 @@ class textstatistics:
             return grade
         except:
             print("Error(GF): Word Count is Zero, cannot divide")
-
+#-----------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------
+#Parallel Version of gunning_fog
     def gunning_fog_multiprocess(self, text):
         try:
-            p = Process(target=self.difficult_words_process,args=(text ,))
+            p = Process(target=self.difficult_words_process,args=(text ,)) 
             q = Process(target=self.lexicon_count_process,args=(text ,)) 
             p.start()
             q.start()
+            # create two new processes to run the functions in parallel. Process object is created and started. 
             q.join()
             p.join()
+            # join ensures the completion of the two processes the main program waits for all the sub-processes to complete.   
             xd=q1.get()
             xc=q2.get()            
+            #Get the return Values which are pushed on the Queues
             per_diff_words = (xd/xc*100) + 5
             grade = 0.4*(self.avg_sentence_length_process(text,xc,xd) + per_diff_words)
             return grade
         except:
             print("Error(GF): Word Count is Zero, cannot divide")    
-    
+
+# The optimized version of avg_sentence_length function. Removed redundant function calls. 
+    def avg_sentence_length_process(self, text , lc, ld):
+        
+        sc = self.sentence_count(text)
+        try:
+            ASL = float(lc/sc)
+            return round(lc/sc, 1)
+        except:
+            print("Error(ASL): Sentence Count is Zero, Cannot Divide")
+            return
+
+# Used Queues to return the value instead of normal return 
+    def difficult_words_process(self, text):
+        text_list = text.split()
+        diff_words_set = set()
+        for value in text_list:
+            if value not in easy_word_set:
+                if self.syllable_count(value) > 1:
+                    if value not in diff_words_set:
+                        diff_words_set.add(value)
+        q1.put(len(diff_words_set))
+
+# Used Queues to return the value instead of normal return 
+    def lexicon_count_process(self, text, removepunct=True):
+        """
+        Function to return total lexicon (words in lay terms) counts in a text
+        """
+        if removepunct:
+            text = ''.join(ch for ch in text if ch not in exclude)
+        count = len(text.split())
+        q2.put(count)
+#-----------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#end of my comtribution 
+#------------------------------------------------------------------------------------------------
+
+
     def text_standard(self, text):
         grade = []
 
